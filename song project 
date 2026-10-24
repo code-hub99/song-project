@@ -1,0 +1,81 @@
+
+#include <iostream>
+#include <string>
+#include <vector>
+#include <thread>
+#include <mutex>
+#include <chrono>
+
+using namespace std;
+using namespace chrono;
+
+mutex lyricLock;
+
+struct Lyric {
+    double startTime;
+    string text;
+    int speed;
+};
+
+void showLyric(
+    const Lyric& lyric,
+    steady_clock::time_point start
+) {
+    auto target = start
+        + milliseconds(
+            static_cast<int>(lyric.startTime * 1000)
+        );
+
+    this_thread::sleep_until(target);
+
+    lock_guard<mutex> guard(lyricLock);
+
+    for (char c : lyric.text) {
+        cout << c << flush;
+        this_thread::sleep_for(
+            milliseconds(lyric.speed)
+        );
+    }
+
+    cout << '\n';
+}
+
+int main() {
+    vector<Lyric> lyrics = {
+        {0.5,  "Don't stay awake for too long", 65},
+        {3.0,  "Don't go to bed", 80},
+        {5.0,  "I'll make a cup of coffee for your head", 60},
+        {8.5,  "I'll get you up and going out of bed", 60},
+        {12.0, "Yeah, I don't wanna fall asleep", 70},
+        {15.0, "I don't wanna pass away", 75},
+        {17.5, "I've been thinking of our future", 65},
+        {20.5, "'Cause I'll never see those days", 70},
+        {23.5, "I don't know why this has happened,", 60},
+        {26.5, "but I probably deserve it", 65},
+        {29.5, "I tried to do my best,", 70},
+        {32.0, "but you know that I'm not perfect", 65}
+    };
+
+    vector<thread> threads;
+    auto start = steady_clock::now();
+
+    cout << "=== LO-FI KARAOKE ===\n\n";
+
+    for (const auto& lyric : lyrics) {
+        threads.emplace_back(
+            showLyric,
+            lyric,
+            start
+        );
+    }
+
+    for (auto& t : threads) {
+        t.join();
+    }
+
+    cout << "\n=== END ===\n";
+
+    return 0;
+}
+
+
